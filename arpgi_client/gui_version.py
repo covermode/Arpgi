@@ -1,5 +1,16 @@
+# GUI client for debug.    @LatypovIlya
+
+
 import pygame
 from client import ArpgiClient
+
+
+def throw_and_run(func, args=None, kwargs=None):
+    args = () if args is None else args
+    kwargs = {} if kwargs is None else kwargs
+    from threading import Thread
+    t = Thread(target=func, args=args, kwargs=kwargs)
+    t.start()
 
 
 class GUIClient(ArpgiClient):
@@ -17,11 +28,11 @@ class GUIClient(ArpgiClient):
 
     def draw_model(self, on: pygame.Surface, model):
         pygame.draw.rect(on, (255, 255, 255) if model.alive else (100, 100, 100),
-                         model.rect, 2)
-        on.blit(self.font.render(str(model.rect), False, (255, 255, 255)),
-                (model.rect[0], model.rect[1]))
-        on.blit(self.font.render(str(model.d_pos), False, (255, 255, 255)),
-                (model.rect[0], model.rect[1] + 15))
+                         (model.x, model.y, model.w, model.h), 2)
+        on.blit(self.font.render(str((model.x, model.y, model.w, model.h)),
+                                 False, (255, 255, 255)), (model.x, model.y))
+        on.blit(self.font.render(str((model.delta_pos_x, model.delta_pos_y)),
+                                 False, (255, 255, 255)), (model.x, model.y + 15))
 
     def draw_models(self, on: pygame.Surface):
         for _, model in self.models.items():
@@ -34,8 +45,9 @@ class GUIClient(ArpgiClient):
                 self.run = False
 
             if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
-                self.move_at([event.pos[0] - self.models[self.name].rect[0],
-                              event.pos[1] - self.models[self.name].rect[1]])
+                throw_and_run(self.move_at, args=(
+                    [event.pos[0] - self.models[self.name].x,
+                     event.pos[1] - self.models[self.name].y],))
 
         self.screen.fill((0, 0, 0))
         self.draw_models(self.screen)

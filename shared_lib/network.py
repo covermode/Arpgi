@@ -1,3 +1,6 @@
+# Exchanging messages module    @LatypovIlya
+
+
 import socket
 from time import sleep
 from threading import Thread
@@ -186,9 +189,9 @@ class Mailing:
         }
         return self._ask(data)
 
-    def set_and_go(self, address, data):
-        setter = Thread(target=self.set, args=(address, data))
-        setter.start()
+    # def set_and_go(self, address, data):
+    #     setter = Thread(target=self.set, args=(address, data))
+    #     setter.start()
 
     def set(self, address, data):
         data = {
@@ -210,8 +213,8 @@ class NetClient(Mailing):
         self.address = self.host, self.port = host, port
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
-        name = self.connect()
-        super(NetClient, self).__init__(self.socket, name)
+        self.entry_info = self.connect()
+        super(NetClient, self).__init__(self.socket, self.entry_info["name"])
         self.receiver = Thread(target=self.start_receiving)
         self.receiver.start()
 
@@ -223,4 +226,4 @@ class NetClient(Mailing):
 
     def connect(self):
         self.socket.connect(self.address)
-        return self.socket.recv(4096).decode()
+        return json.loads(self.socket.recv(4096))

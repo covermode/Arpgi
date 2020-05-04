@@ -1,3 +1,6 @@
+# Useful stuff for coding   @LatypovIlya
+
+
 from threading import Timer
 import logging
 
