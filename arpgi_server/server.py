@@ -173,7 +173,7 @@ class ArpgiServer:
         updater.start()
 
         merger = Periodical(models_merge, 10)
-        merger.start()
+        # merger.start()
 
         log.info("Started serving")
         while True:

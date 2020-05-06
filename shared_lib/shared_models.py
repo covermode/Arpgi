@@ -1,4 +1,4 @@
-# Common models for visuals.    @LatypovIlya
+# Common models for visuals and geometry computing.    @LatypovIlya
 
 
 import time
@@ -49,24 +49,30 @@ class SolidBase:
         return False
 
 
-class EntityModel:
-    """Common game class of movable object. Initializing with some basic params."""
-    def __init__(self, name: str, x: float, y: float, w: float, h: float, vel: float,
-                 delta_pos_x: float, delta_pos_y: float, motion_start_x: float,
-                 motion_start_y: float, motion_start_time: float, alive: bool, _base=None):
-
-        self.name = name
+class BaseModel:
+    def __init__(self, **kwargs):
+        x = kwargs.pop("x")
+        y = kwargs.pop("y")
+        w = kwargs.pop("w")
+        h = kwargs.pop("h")
+        self.name = kwargs.pop("name")
+        if not isinstance(self.name, str):
+            raise TypeError("name must be a str")
+        self._base = kwargs.pop("_base")
+        if not isinstance(self._base, SolidBase):
+            raise TypeError("_base kwarg must be a 'SolidBase' instance")
         self._rect = Rect(x, y, w, h)
-        self.vel = vel
-        self.delta_pos_x = delta_pos_x
-        self.delta_pos_y = delta_pos_y
 
-        self.motion_start_x = motion_start_x
-        self.motion_start_y = motion_start_y
-        self.motion_start_time = motion_start_time
+    def set_base(self, base: SolidBase):
+        if not isinstance(base, SolidBase):
+            raise TypeError("base must be a 'SolidBase' instance")
+        self._base = base
 
-        self.alive = alive
-        self._base = _base
+    def get_model(self, fields=("name", "x", "y", "w", "h")):
+        return {
+            field: getattr(self, field)
+            for field in fields
+        }
 
     @property
     def x(self):
@@ -99,6 +105,21 @@ class EntityModel:
     @h.setter
     def h(self, val):
         self._rect.h = val
+
+
+class EntityModel(BaseModel):
+    """Common game class of movable object. Initializing with some basic params."""
+    def __init__(self, **kwargs):
+        super(EntityModel, self).__init__(**kwargs)
+        self.vel = kwargs.pop("vel")
+        self.delta_pos_x = kwargs.pop("delta_pos_x")
+        self.delta_pos_y = kwargs.pop("delta_pos_y")
+
+        self.motion_start_x = kwargs.pop("motion_start_x")
+        self.motion_start_y = kwargs.pop("motion_start_y")
+        self.motion_start_time = kwargs.pop("motion_start_time")
+
+        self.alive = kwargs.pop("alive")
 
     def set_moving_target(self, delta_pos):
         """Creates entity moving target. (relative position) Then entity required to move"""
@@ -135,21 +156,11 @@ class EntityModel:
             self.x, self.y = prev_pos
             self.set_moving_target((0, 0))
 
-    def get_model(self):
-        return {
-            'name': self.name,
-            'x': self.x,
-            'y': self.y,
-            'w': self.w,
-            'h': self.h,
-            'vel': self.vel,
-            'delta_pos_x': self.delta_pos_x,
-            'delta_pos_y': self.delta_pos_y,
-            'motion_start_x': self.motion_start_x,
-            'motion_start_y': self.motion_start_y,
-            'motion_start_time': self.motion_start_time,
-            'alive': self.alive
-        }
+    def get_model(self, *_):
+        return super(EntityModel, self).get_model((
+            "name", "x", "y", "w", "h", "vel", "delta_pos_x", "delta_pos_y",
+            "motion_start_x", "motion_start_y", "motion_start_time", "alive"
+        ))
 
     def __str__(self):
         return str(self.get_model())
@@ -158,56 +169,7 @@ class EntityModel:
         return str(self)
 
 
-class StaticModel:
-    def __init__(self, name: str, x: float, y: float, w: float, h: float, _base=None):
-        self.name = name
-        self._rect = Rect(x, y, w, h)
-        if _base is not None:
-            self._rect.set_base(_base)
-
-    def update_pos(self):
-        return
-
-    def get_model(self):
-        return {
-            'name': self.name,
-            'x': self.x,
-            'y': self.y,
-            'w': self.w,
-            'h': self.h
-        }
-
-    def set_solid_base(self, base: SolidBase):
-        self._rect.set_base(base)
-
-    @property
-    def x(self):
-        return self._rect.x
-
-    @x.setter
-    def x(self, val):
-        self._rect.x = val
-
-    @property
-    def y(self):
-        return self._rect.y
-
-    @y.setter
-    def y(self, val):
-        self._rect.y = val
-
-    @property
-    def w(self):
-        return self._rect.w
-
-    @w.setter
-    def w(self, val):
-        self._rect.w = val
-
-    @property
-    def h(self):
-        return self._rect.h
-
-    @h.setter
-    def h(self, val):
-        self._rect.h = val
+class StaticModel(BaseModel):
+    def __init__(self, **kwargs):
+        super(StaticModel, self).__init__(**kwargs)
+        self._rect.set_base(self._base)
