@@ -121,6 +121,16 @@ class EntityModel(BaseModel):
 
         self.alive = kwargs.pop("alive")
 
+    @classmethod
+    def generate_entity(cls, name, rect, vel, delta, base):
+        entity = cls(
+            name=name, x=rect[0], y=rect[1], w=rect[2], h=rect[3], vel=vel,
+            delta_pos_x=0, delta_pos_y=0, alive=True, motion_start_x=rect[0],
+            motion_start_y=rect[1], motion_start_time=0, _base=base
+        )
+        entity.set_moving_target(delta)
+        return entity
+
     def set_moving_target(self, delta_pos):
         """Creates entity moving target. (relative position) Then entity required to move"""
         self.motion_start_x = self.x

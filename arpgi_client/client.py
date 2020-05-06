@@ -4,6 +4,14 @@
 from shared_lib.network import NetClient
 from shared_lib.exts import Periodical
 from shared_lib.shared_models import EntityModel, StaticModel, SolidBase
+import random
+
+
+class Projectile(EntityModel):
+    def update_pos(self):
+        super(Projectile, self).update_pos()
+        if self.delta_pos_x == 0 and self.delta_pos_y == 0:
+            self.alive = False
 
 
 class ArpgiClient:
@@ -68,10 +76,25 @@ class ArpgiClient:
             pass
         # self.refresh_myself_model()
 
+    def shoot(self, delta: list):
+        me = self.entities[self.name]
+        projectile = Projectile.generate_entity(
+            name=f"<Projectile {random.randint(100000, 999999)}",
+            rect=(me.x + me.w // 2, me.y + me.h // 2, 10, 10), vel=200,
+            delta=delta, base=self.solid_base
+        )
+        self.entities[projectile.name] = projectile
+
     def start(self):
         def update_models():
+            dead = []
             for _, model in self.entities.items():
+                if not model.alive:
+                    dead.append(_)
+                    continue
                 model.update_pos()
+            for _ in dead:
+                self.entities.pop(_)
 
         self.model_updater = Periodical(update_models, 1 / 60)
         self.model_updater.start()
