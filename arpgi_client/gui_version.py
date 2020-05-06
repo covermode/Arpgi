@@ -80,8 +80,8 @@ class GUIClient(ArpgiClient):
                 pos = self.camera.decalc(event.pos)
                 print(pos)
                 throw_and_run(self.move_at, args=(
-                    [pos[0] - self.entities[self.name].x,
-                     pos[1] - self.entities[self.name].y],))
+                    [pos[0] - (self.entities[self.name].x + self.entities[self.name].w // 2),
+                     pos[1] - (self.entities[self.name].y + self.entities[self.name].h // 2)],))
 
         self.screen.fill((0, 0, 0))
         self.camera.set_target(self.entities[self.name])

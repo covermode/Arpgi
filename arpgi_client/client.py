@@ -54,12 +54,13 @@ class ArpgiClient:
         self.entities[self.name] = EntityModel(**self.network.get("get_player"))
 
     def move_at(self, delta: list):
-        if 0 <= self.entities[self.name].x + delta[0] <= self.map_size[0] and \
-                0 <= self.entities[self.name].y + delta[1] <= self.map_size[1]:
+        me = self.entities[self.name]
+        if 0 <= me.x + delta[0] and me.x + me.w + delta[0] <= self.map_size[0] and \
+                0 <= me.y + delta[1] and me.y + me.h + delta[1] <= self.map_size[1]:
             self.network.set("set_player_moving_target", data={
                 "delta_pos": delta
             })
-            self.entities[self.name].set_moving_target(delta)
+            me.set_moving_target(delta)
         else:
             pass
         # self.refresh_myself_model()
