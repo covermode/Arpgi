@@ -3,7 +3,7 @@
 
 from shared_lib.network import NetClient
 from shared_lib.exts import Periodical
-from shared_lib.shared_models import EntityModel, StaticModel
+from shared_lib.shared_models import EntityModel, StaticModel, SolidBase
 
 
 class ArpgiClient:
@@ -12,9 +12,10 @@ class ArpgiClient:
         self.name = self.network.name
         self.room_info = self.network.get("get_room_info")
         self.map_size = self.room_info["room_size"]
-        self.statics = {name: StaticModel(**static)
+        self.solid_base = SolidBase()
+        self.statics = {name: StaticModel(**static, _base=self.solid_base)
                         for name, static in self.network.get("get_statics").items()}
-        self.entities = {name: EntityModel(**entity)
+        self.entities = {name: EntityModel(**entity, _base=self.solid_base)
                          for name, entity in self.network.get("get_entities").items()}
         self.run = True
 
@@ -26,7 +27,7 @@ class ArpgiClient:
 
         @self.network.route("update_entities", method="SET")
         def update_entities(sender_name, data):
-            self.entities = {name: EntityModel(**entity)
+            self.entities = {name: EntityModel(**entity, _base=self.solid_base)
                              for name, entity in data.items()}
             return 0
 
@@ -37,7 +38,8 @@ class ArpgiClient:
 
         @self.network.route("update_entity", method="SET")
         def update_entity(sender_name, data):
-            self.entities[data["owner_name"]] = EntityModel(**data["model"])
+            self.entities[data["owner_name"]] = EntityModel(**data["model"],
+                                                            _base=self.solid_base)
             return 0
 
         # @self.network.route("delete_model", method="SET")
@@ -51,7 +53,8 @@ class ArpgiClient:
             return 0
 
     def refresh_myself_model(self):
-        self.entities[self.name] = EntityModel(**self.network.get("get_player"))
+        self.entities[self.name] = EntityModel(**self.network.get("get_player"),
+                                               _base=self.solid_base)
 
     def move_at(self, delta: list):
         me = self.entities[self.name]

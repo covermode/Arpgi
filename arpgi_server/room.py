@@ -1,7 +1,7 @@
 # Game state updater
 
 
-from shared_lib.shared_models import EntityModel, StaticModel
+from shared_lib.shared_models import EntityModel, StaticModel, SolidBase
 import data.model_refuser as model_refuser
 
 
@@ -18,13 +18,14 @@ class Room:
         self.players = {}
         self.entities = {}
         self.statics = {}
+        self.solid_base = SolidBase()
         self.map = Map(map_size[0], map_size[1])
         model_refuser.init(os.path.join(*os.path.split(__file__)[:-1],
                                         "data", "db", "data.sqlite"))
 
         for item in model_refuser.refuse_static():
             self.statics[item.name + str(item.id)] = StaticModel(
-                name=item.name, x=item.x, y=item.y, w=item.w, h=item.h
+                name=item.name, x=item.x, y=item.y, w=item.w, h=item.h, _base=self.solid_base
             )
 
         for item in model_refuser.refuse_entity():
@@ -32,12 +33,13 @@ class Room:
                 name=item.name,
                 x=item.x, y=item.y, w=item.w, h=item.h, vel=item.vel,
                 delta_pos_x=0, delta_pos_y=0, motion_start_x=item.x,
-                motion_start_y=item.y, motion_start_time=0, alive=True
+                motion_start_y=item.y, motion_start_time=0, alive=True,
+                _base=self.solid_base
             )
         print("ok")
 
     def add_player(self, name, player_data) -> EntityModel:
-        self.players[name] = EntityModel(**player_data)
+        self.players[name] = EntityModel(**player_data, _base=self.solid_base)
         self.entities[name] = self.players[name]
         return self.players[name]
 
