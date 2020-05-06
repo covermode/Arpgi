@@ -1,7 +1,8 @@
 # Game state updater
 
 
-from shared_lib.shared_models import EntityModel, StaticModel, SolidBase
+from shared_lib.models import EntityModel, StaticModel, SolidBase
+from shared_lib.spell import search
 import data.model_refuser as model_refuser
 
 
@@ -65,6 +66,13 @@ class Room:
             'entity': self.get_entity_models()
         }
 
+    def use_spell(self, spell_name, owner_name, delta_pos):
+        owner = self.player(owner_name)
+        projectiles = search(spell_name).cast((owner.x, owner.y), delta_pos, self.solid_base)
+        for prj in projectiles:
+            self.entities[prj.name] = prj
+        return projectiles
+
     def pop_player(self, name) -> EntityModel:
         player = self.players[name]
         self.entities.pop(name)
@@ -77,9 +85,15 @@ class Room:
         return ret
 
     def update(self):
+        dead = []
         for name, entity in self.entities.items():
             assert isinstance(entity, EntityModel)
-            entity.update_pos()
+            if entity.alive:
+                entity.update_pos()
+            else:
+                dead.append(name)
+        for name in dead:
+            self.entities.pop(name)
 
     @property
     def spawn_point(self):

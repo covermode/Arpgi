@@ -73,13 +73,31 @@ class ArpgiServer:
             else:
                 raise ValueError("Can't move out the world")
 
+        @self.route("use_spell", method="SET")
+        def use_spell(sender_name, data):
+            self.where_player(sender_name).use_spell(
+                spell_name=data["spell_name"], owner_name=sender_name,
+                delta_pos=data["delta_pos"]
+            )
+            for owner_name, session in connected.items():
+                if owner_name == sender_name:
+                    continue
+                session.set("set_used_spell", data={
+                    'spell_name': data["spell_name"],
+                    'owner_name': sender_name,
+                    'delta_pos': data["delta_pos"]
+                })
+            return 0
+
     def route(self, address: str, method: str):
         """Nest of main network class method 'route' for registering methods as
         allowed to call from client."""
         return Mailing.route(self.routed, address, method)
 
     def where_player(self, owner_name):
-        return self.rooms[connected[owner_name].room_name]
+        ret = self.rooms[connected[owner_name].room_name]
+        assert isinstance(ret, Room)
+        return ret
 
     def add_to_room(self, user_name, room_name):
         log.info(f"User {user_name} is being added to room {room_name}")

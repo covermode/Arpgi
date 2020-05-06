@@ -3,15 +3,8 @@
 
 from shared_lib.network import NetClient
 from shared_lib.exts import Periodical
-from shared_lib.shared_models import EntityModel, StaticModel, SolidBase
-import random
-
-
-class Projectile(EntityModel):
-    def update_pos(self):
-        super(Projectile, self).update_pos()
-        if self.delta_pos_x == 0 and self.delta_pos_y == 0:
-            self.alive = False
+from shared_lib.models import EntityModel, StaticModel, SolidBase
+from shared_lib.spell import search
 
 
 class ArpgiClient:
@@ -25,6 +18,7 @@ class ArpgiClient:
                         for name, static in self.network.get("get_statics").items()}
         self.entities = {name: EntityModel(**entity, _base=self.solid_base)
                          for name, entity in self.network.get("get_entities").items()}
+        self.current_spell = "FireBall"
         self.run = True
 
         # @self.network.route("update_models", method="SET")
@@ -60,6 +54,12 @@ class ArpgiClient:
             self.entities.pop(data["owner_name"])
             return 0
 
+        @self.network.route("set_used_spell", method="SET")
+        def set_used_spell(sender_name, data):
+            self.use_spell(data["spell_name"], data["owner_name"],
+                           data["delta_pos"])
+            return 0
+
     def refresh_myself_model(self):
         self.entities[self.name] = EntityModel(**self.network.get("get_player"),
                                                _base=self.solid_base)
@@ -76,14 +76,20 @@ class ArpgiClient:
             pass
         # self.refresh_myself_model()
 
+    def use_spell(self, name, by: EntityModel, delta_pos):
+        projectiles = search(name).cast((by.x + by.w // 2, by.y + by.h // 2),
+                                        delta_pos, self.solid_base)
+
+        for prj in projectiles:
+            self.entities[prj.name] = prj
+
     def shoot(self, delta: list):
-        me = self.entities[self.name]
-        projectile = Projectile.generate_entity(
-            name=f"<Projectile {random.randint(100000, 999999)}",
-            rect=(me.x + me.w // 2, me.y + me.h // 2, 10, 10), vel=200,
-            delta=delta, base=self.solid_base
-        )
-        self.entities[projectile.name] = projectile
+        self.use_spell(self.current_spell, self.entities[self.name], delta)
+
+        self.network.set("use_spell", data={
+            "spell_name": self.current_spell,
+            "delta_pos": delta
+        })
 
     def start(self):
         def update_models():

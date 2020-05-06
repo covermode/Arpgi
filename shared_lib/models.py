@@ -58,9 +58,13 @@ class BaseModel:
         self.name = kwargs.pop("name")
         if not isinstance(self.name, str):
             raise TypeError("name must be a str")
-        self._base = kwargs.pop("_base")
-        if not isinstance(self._base, SolidBase):
-            raise TypeError("_base kwarg must be a 'SolidBase' instance")
+        if "_base" not in kwargs or kwargs["_base"] is None:
+            self._base = None
+            print("Warning. Base for this one wasn't set")
+        else:
+            self._base = kwargs.pop("_base")
+            if not isinstance(self._base, SolidBase):
+                raise TypeError("_base kwarg must be a 'SolidBase' instance")
         self._rect = Rect(x, y, w, h)
 
     def set_base(self, base: SolidBase):
@@ -122,11 +126,11 @@ class EntityModel(BaseModel):
         self.alive = kwargs.pop("alive")
 
     @classmethod
-    def generate_entity(cls, name, rect, vel, delta, base):
+    def generate_entity(cls, name, rect, vel, delta, base=None, **kwargs):
         entity = cls(
             name=name, x=rect[0], y=rect[1], w=rect[2], h=rect[3], vel=vel,
             delta_pos_x=0, delta_pos_y=0, alive=True, motion_start_x=rect[0],
-            motion_start_y=rect[1], motion_start_time=0, _base=base
+            motion_start_y=rect[1], motion_start_time=0, _base=base, **kwargs
         )
         entity.set_moving_target(delta)
         return entity
